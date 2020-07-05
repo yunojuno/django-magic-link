@@ -1,0 +1,8 @@
+[run]
+include = magic_link/*
+omit =
+    magic_link/tests.py
+    magic_link/migrations/*
+    magic_link/apps.py
+    .tox/*
+    .venv/*
