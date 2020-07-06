@@ -107,6 +107,7 @@ class TestMagicLink:
         log = link.log_use(request)
         assert MagicLinkUse.objects.count() == 1
         assert log.link == link
+        assert log.error == ""
 
     @pytest.mark.django_db
     def test_log_error(self):
@@ -118,6 +119,7 @@ class TestMagicLink:
             spec=HttpRequest, method="GET", user=user, headers=headers, session=session
         )
         log = link.log_use(request, InvalidTokenUse("Test error"))
+        assert log.link == link
         assert log.error == "Test error"
 
     @pytest.mark.django_db

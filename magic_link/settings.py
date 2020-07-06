@@ -8,5 +8,9 @@ def _env_or_setting(key: str, default: Any, cast_func: Callable = lambda x: x) -
     return cast_func(getenv(key) or getattr(settings, key, default))
 
 
-# default expiry of a link, in seconds
-DEFAULT_EXPIRY = _env_or_setting("MAGIC_LINK_DEFAULT_EXPIRY", 300, lambda x: int(x))
+# default link expiry, in seconds; defaults to 60s / 1 mins
+DEFAULT_EXPIRY = _env_or_setting("MAGIC_LINK_DEFAULT_EXPIRY", 60, lambda x: int(x))
+
+
+# default redirect URL; defaults to 'root'
+DEFAULT_REDIRECT = _env_or_setting("MAGIC_LINK_DEFAULT_REDIRECT", "/")

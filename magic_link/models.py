@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .exceptions import ExpiredToken, InactiveToken, InvalidTokenUse, UserMismatch
-from .settings import DEFAULT_EXPIRY
+from .settings import DEFAULT_EXPIRY, DEFAULT_REDIRECT
 
 
 def parse_remote_addr(request: HttpRequest) -> str:
@@ -45,7 +45,7 @@ class MagicLink(models.Model):
     redirect_to = models.CharField(
         help_text="URL to which user will be redirected after logging in. ('/')",
         max_length=255,
-        default="/",
+        default=DEFAULT_REDIRECT,
     )
     created_at = models.DateTimeField(
         default=timezone.now, help_text="When the token was originally created"
@@ -81,7 +81,7 @@ class MagicLink(models.Model):
 
     def validate(self, request: HttpRequest) -> None:
         """
-        Raise InvalidToken with appropriate message if token is not valid.
+        Check token and request and raise InvalidToken if necessary.
 
         In addition to the link itself, this method checks that the HttpRequest is
         valid - which means that it is either unauthenticated, or authenticated as
@@ -124,7 +124,7 @@ class MagicLink(models.Model):
 
 class MagicLinkUse(models.Model):
     """
-    Records the use of a token.
+    Record the use of a token.
 
     This model is used for auditing purposes - tracking when the token was
     used, recording the IP address and User-Agent of the client, and their
