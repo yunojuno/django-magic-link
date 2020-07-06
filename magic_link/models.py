@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import datetime
-from typing import Optional
 import uuid
+from typing import Optional
 
 from django.conf import settings
 from django.contrib.auth import login
@@ -10,6 +10,7 @@ from django.db import models
 from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import timezone
+
 from .settings import DEFAULT_EXPIRY
 
 
@@ -60,13 +61,13 @@ class MagicLink(models.Model):
         default=True, help_text="Set to False to deactivate the token"
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Magic link ({self.id}) for {self.user.username}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<MagicLink id={self.id} user_id={self.user_id} token='{self.token}'>'"
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
         return reverse("use_magic_link", kwargs={"token": self.token})
 
     @property
@@ -74,6 +75,7 @@ class MagicLink(models.Model):
         """Return True if the token is past its expiry timestamp."""
         if self.expires_at:
             return self.expires_at < timezone.now()
+        return None
 
     @property
     def is_valid(self) -> bool:
@@ -164,10 +166,10 @@ class MagicLinkUse(models.Model):
     class Meta:
         get_latest_by = ("timestamp",)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Magic link ({self.link_id}) used at {self.timestamp}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"<MagicLinkUse id={self.id} link_id={self.link_id} "
             f"timestamp='{self.timestamp}''>"

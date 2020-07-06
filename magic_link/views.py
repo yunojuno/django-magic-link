@@ -1,17 +1,16 @@
 import logging
 
 from django.http import HttpRequest
-from django.http.response import HttpResponseRedirect
+from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.views import View
-
 from magic_link.models import InvalidTokenUse, MagicLink
 
 logger = logging.getLogger(__name__)
 
 
 class MagicLinkView(View):
-    def get(self, request: HttpRequest, token: str):
+    def get(self, request: HttpRequest, token: str) -> HttpResponse:
         """
         Render login page.
 
@@ -39,7 +38,7 @@ class MagicLinkView(View):
                 status=200,
             )
 
-    def post(self, request: HttpRequest, token: str):
+    def post(self, request: HttpRequest, token: str) -> HttpResponse:
         """
         Handle the login POST request.
 

@@ -103,4 +103,4 @@ COVERAGE_MODULE_EXCLUDES = [
 # COVERAGE_USE_STDOUT = True
 
 # AUTH_USER_MODEL = 'tests.CustomUser'
-assert DEBUG, "This settings file can only be used with DEBUG=True"
+assert DEBUG, "This settings file can only be used with DEBUG=True"  # noqa: S101
