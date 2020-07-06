@@ -97,6 +97,6 @@ access to the link user's account. **YOU HAVE BEEN WARNED**.
 
 Settings are read from the environment first, then Django settings.
 
--   `MAGIC_LINK_DEFAULT_EXPIRY`: the default link expiry, in seconds (defaults to 600 - 5 minutes).
+-   `MAGIC_LINK_DEFAULT_EXPIRY`: the default link expiry, in seconds (defaults to 60 - 1 minute).
 
 -   `MAGIC_LINK_DEFAULT_REDIRECT`: the default redirect URL (defaults to "/").
