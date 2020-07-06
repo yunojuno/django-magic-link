@@ -96,7 +96,7 @@ class TestMagicLink:
             assert mock_login.called_once_with(request, link.user)
 
     @pytest.mark.django_db
-    def test_log_use(self):
+    def test_audit(self):
         user = User.objects.create(username="Job Bluth")
         link = MagicLink.objects.create(user=user)
         headers = {"X-Forwarded-For": "127.0.0.1", "User-Agent": "Chrome"}
@@ -104,7 +104,7 @@ class TestMagicLink:
         request = mock.Mock(
             spec=HttpRequest, method="GET", user=user, headers=headers, session=session
         )
-        log = link.log_use(request)
+        log = link.audit(request)
         assert MagicLinkUse.objects.count() == 1
         assert log.link == link
         assert log.error == ""
@@ -118,7 +118,7 @@ class TestMagicLink:
         request = mock.Mock(
             spec=HttpRequest, method="GET", user=user, headers=headers, session=session
         )
-        log = link.log_use(request, InvalidTokenUse("Test error"))
+        log = link.audit(request, InvalidTokenUse("Test error"))
         assert log.link == link
         assert log.error == "Test error"
 
