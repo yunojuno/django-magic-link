@@ -12,6 +12,7 @@ class MagicLinkUseInline(admin.TabularInline):
         "remote_addr",
         "http_method",
         "link_is_valid",
+        "http_status_code",
     )
     exclude = ("ua_string",)
     extra = 0
@@ -27,7 +28,7 @@ class MagicLinkAdmin(admin.ModelAdmin):
         "token",
     )
     raw_id_fields = ("user",)
-    readonly_fields = ("user", "token", "created_at", "has_expired")
+    readonly_fields = ("token", "created_at", "has_expired")
     ordering = ("-created_at",)
     inlines = (MagicLinkUseInline,)
 

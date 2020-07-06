@@ -1,9 +1,0 @@
-<html>
-    {{ link.token }}<br />
-    {{ link.expires_at }}<br />
-    {{ link.user }}
-    <form method="POST" action=".">
-        {% csrf_token %}
-        <button type="submit"></button>
-    </form>
-</html>

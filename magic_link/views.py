@@ -1,6 +1,5 @@
 import logging
 
-from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -21,13 +20,24 @@ class MagicLinkView(View):
 
         """
         link = get_object_or_404(MagicLink, token=token)
-        link.use_link(request)
         try:
             link.validate(request)
-        except InvalidTokenUse:
-            logger.warning("Invalid magic link use")
-            raise PermissionDenied("Magic link is invalid.")
-        return render(request, template_name="index.html", context={"link": link})
+        except InvalidTokenUse as ex:
+            link.log_use(request, status_code=403)
+            return render(
+                request,
+                template_name="error.html",
+                context={"link": link, "error": ex},
+                status=403,
+            )
+        else:
+            link.log_use(request, status_code=200)
+            return render(
+                request,
+                template_name="logmein.html",
+                context={"link": link},
+                status=200,
+            )
 
     def post(self, request: HttpRequest, token: str):
         """
@@ -43,12 +53,18 @@ class MagicLinkView(View):
 
         """
         link = get_object_or_404(MagicLink, token=token)
-        link.use_link(request)
         try:
             link.validate(request)
-        except InvalidTokenUse:
-            logger.warning("Invalid magic link use")
-            raise PermissionDenied("Magic link is invalid.")
-        link.login(request)
-        link.disable()
-        return HttpResponseRedirect("/admin")
+        except InvalidTokenUse as ex:
+            link.log_use(request, status_code=403)
+            return render(
+                request,
+                template_name="error.html",
+                context={"link": link, "error": ex},
+                status=403,
+            )
+        else:
+            link.login(request)
+            link.log_use(request, status_code=302)
+            link.disable()
+            return HttpResponseRedirect(link.redirect_to)

@@ -1,0 +1,13 @@
+<html>
+    <h1>Welcome to the magic link login page</h1>
+    <p>
+        This link will log you in as
+        <strong>{{ link.user.get_full_name|default:link.user.username }}</strong>, if you click on
+        the button.
+    </p>
+    <p>The link will expire at {{ link.expires_at }}.</p>
+    <form method="POST" action="{{ link.get_absolute_url }}">
+        {% csrf_token %}
+        <button type="submit">Log me in</button>
+    </form>
+</html>
