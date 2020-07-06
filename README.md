@@ -100,3 +100,17 @@ Settings are read from the environment first, then Django settings.
 -   `MAGIC_LINK_DEFAULT_EXPIRY`: the default link expiry, in seconds (defaults to 60 - 1 minute).
 
 -   `MAGIC_LINK_DEFAULT_REDIRECT`: the default redirect URL (defaults to "/").
+
+## Screenshots
+
+**Default landing page (`logmein.html`)**
+
+<img src="/screenshots/landing-page.png" width=600 alt="Screenshot of default landing page" />
+
+**Default error page (`error.html`)**
+
+<img src="/screenshots/error-page.png" width=600 alt="Screenshot of default error page" />
+
+**Admin view of magic link uses**
+
+<img src="/screenshots/admin-inline.png" width=600 alt="Screenshot of MagicLinkUseInline" />
