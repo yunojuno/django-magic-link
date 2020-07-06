@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "django-magic-link"
-version = "0.1-dev01"
+version = "0.1"
 description = "Django app for managing tokenised 'magic link' logins."
 license = "MIT"
 authors = ["YunoJuno <code@yunojuno.com>"]
@@ -10,6 +10,7 @@ homepage = "https://github.com/yunojuno/django-magic-link"
 repository = "https://github.com/yunojuno/django-magic-link"
 documentation = "https://github.com/yunojuno/django-magic-link"
 classifiers = [
+    "Development Status :: 4 - Beta",
     "Environment :: Web Environment",
     "Framework :: Django",
     "Framework :: Django :: 2.2",
