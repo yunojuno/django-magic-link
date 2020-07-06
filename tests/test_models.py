@@ -5,8 +5,13 @@ from django.contrib.auth.models import AnonymousUser, User
 from django.http.request import HttpRequest
 from django.utils import timezone
 
-from magic_link.models import (
+from magic_link.exceptions import (
+    ExpiredToken,
+    InactiveToken,
     InvalidTokenUse,
+    UserMismatch,
+)
+from magic_link.models import (
     MagicLink,
     MagicLinkUse,
     parse_remote_addr,
@@ -62,21 +67,19 @@ class TestMagicLink:
     def test_validate__inactive(self):
         link = MagicLink(is_active=False)
         request = mock.Mock(spec=HttpRequest)
-        with pytest.raises(InvalidTokenUse, match="Link is inactive"):
+        with pytest.raises(InactiveToken):
             link.validate(request)
 
     def test_validate__expired(self):
         link = MagicLink(expires_at=timezone.now())
         request = mock.Mock(spec=HttpRequest)
-        with pytest.raises(InvalidTokenUse, match="Link has expired"):
+        with pytest.raises(ExpiredToken):
             link.validate(request)
 
     def test_validate__wrong_user(self):
         link = MagicLink(user=User(id=1))
         request = mock.Mock(spec=HttpRequest, user=User(id=2))
-        with pytest.raises(
-            InvalidTokenUse, match="Request to use token by another user"
-        ):
+        with pytest.raises(UserMismatch):
             link.validate(request)
 
     def test_validate__anonymous(self):
@@ -101,9 +104,21 @@ class TestMagicLink:
         request = mock.Mock(
             spec=HttpRequest, method="GET", user=user, headers=headers, session=session
         )
-        log = link.log_use(request, 200)
+        log = link.log_use(request)
         assert MagicLinkUse.objects.count() == 1
         assert log.link == link
+
+    @pytest.mark.django_db
+    def test_log_error(self):
+        user = User.objects.create(username="Job Bluth")
+        link = MagicLink.objects.create(user=user)
+        headers = {"X-Forwarded-For": "127.0.0.1", "User-Agent": "Chrome"}
+        session = mock.Mock(session_key="")
+        request = mock.Mock(
+            spec=HttpRequest, method="GET", user=user, headers=headers, session=session
+        )
+        log = link.log_error(request, InvalidTokenUse("Test error"))
+        assert log.error == "Test error"
 
     @pytest.mark.django_db
     def test_disable(self):

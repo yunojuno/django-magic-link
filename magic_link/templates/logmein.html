@@ -1,13 +1,30 @@
 <html>
-    <h1>Welcome to the magic link login page</h1>
-    <p>
-        This link will log you in as
-        <strong>{{ link.user.get_full_name|default:link.user.username }}</strong>, if you click on
-        the button.
-    </p>
-    <p>The link will expire at {{ link.expires_at }}.</p>
-    <form method="POST" action="{{ link.get_absolute_url }}">
-        {% csrf_token %}
-        <button type="submit">Log me in</button>
-    </form>
+    <head>
+        <style>
+            body {
+                max-width: 600px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Welcome to the magic link login page</h1>
+        <p>
+            You have arrived on this page via a GET request to a valid magic-link URL. If the link
+            had expired, or been used already, you would have see an error template in its place.
+        </p>
+        <p>
+            You should override this template (<code>logmein.html</code>) in your own application.
+            It is rendered with the relevant <code>link</code> passed in via the context. The form
+            should POST to <code>link.get_absolute_url</code>.
+        </p>
+        <p>
+            If you click on the button you will be logged in as
+            <strong>{{ link.user.get_full_name|default:link.user.username }}</strong>.
+        </p>
+        <p>The link will expire at {{ link.expires_at }}.</p>
+        <form method="POST" action="{{ link.get_absolute_url }}">
+            {% csrf_token %}
+            <button type="submit">Log me in</button>
+        </form>
+    </body>
 </html>

@@ -12,7 +12,7 @@ consequences.
 
 This packages supports a very specific model:
 
-1. User is sent a URL to log them in.
+1. User is sent a link to log them in automatically.
 2. User clicks on the link, and which does a GET request to the URL.
 3. User is presented with a confirmation page, but is _not_ logged in.
 4. User clicks on a button and performs a POST to the same page.

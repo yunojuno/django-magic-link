@@ -11,6 +11,7 @@ from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import timezone
 
+from .exceptions import ExpiredToken, InactiveToken, InvalidTokenUse, UserMismatch
 from .settings import DEFAULT_EXPIRY
 
 
@@ -30,10 +31,6 @@ def parse_ua_string(request: HttpRequest) -> str:
 def link_expires_at(interval: int = DEFAULT_EXPIRY) -> datetime.datetime:
     """Return timestamp used as default link exires_at value."""
     return timezone.now() + datetime.timedelta(seconds=interval)
-
-
-class InvalidTokenUse(Exception):
-    pass
 
 
 class MagicLink(models.Model):
@@ -93,15 +90,15 @@ class MagicLink(models.Model):
 
         """
         if not self.is_active:
-            raise InvalidTokenUse("Link is inactive")
+            raise InactiveToken("Link is inactive")
         if self.has_expired:
-            raise InvalidTokenUse("Link has expired")
+            raise ExpiredToken("Link has expired")
         if request.user.is_anonymous:
             return
         if request.user != self.user:
-            raise InvalidTokenUse("Request to use token by another user")
+            raise UserMismatch("User mismatch")
 
-    def log_use(self, request: HttpRequest, status_code: int) -> MagicLinkUse:
+    def log_use(self, request: HttpRequest) -> MagicLinkUse:
         """Create a MagicLinkUse from an HtttpRequest."""
         return MagicLinkUse.objects.create(
             link=self,
@@ -111,7 +108,19 @@ class MagicLink(models.Model):
             ua_string=parse_ua_string(request),
             session_key=request.session.session_key or "",
             link_is_valid=self.is_valid,
-            http_status_code=status_code,
+        )
+
+    def log_error(self, request: HttpRequest, error: InvalidTokenUse) -> MagicLinkUse:
+        """Create a MagicLinkUse from an HtttpRequest that failed."""
+        return MagicLinkUse.objects.create(
+            link=self,
+            timestamp=timezone.now(),
+            http_method=request.method,
+            remote_addr=parse_remote_addr(request),
+            ua_string=parse_ua_string(request),
+            session_key=request.session.session_key or "",
+            link_is_valid=self.is_valid,
+            error=str(error),
         )
 
     def login(self, request: HttpRequest) -> None:
@@ -160,14 +169,18 @@ class MagicLinkUse(models.Model):
         help_text=("Snapshot of parent link is_valid property at the time of use"),
         default=True,
     )
-    http_status_code = models.IntegerField(
-        help_text=("The HTTP response status code"), default=0,
+    error = models.CharField(
+        max_length=100,
+        help_text="If the link use failed the error will be recorded here",
+        blank=True,
     )
 
     class Meta:
         get_latest_by = ("timestamp",)
 
     def __str__(self) -> str:
+        if self.error:
+            return f"Magic link ({self.link_id}) failed at {self.timestamp}"
         return f"Magic link ({self.link_id}) used at {self.timestamp}"
 
     def __repr__(self) -> str:

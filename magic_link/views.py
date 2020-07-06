@@ -24,7 +24,7 @@ class MagicLinkView(View):
         try:
             link.validate(request)
         except InvalidTokenUse as ex:
-            link.log_use(request, status_code=403)
+            link.log_error(request, ex)
             return render(
                 request,
                 template_name="error.html",
@@ -32,7 +32,7 @@ class MagicLinkView(View):
                 status=403,
             )
         else:
-            link.log_use(request, status_code=200)
+            link.log_use(request)
             return render(
                 request,
                 template_name="logmein.html",
@@ -58,7 +58,7 @@ class MagicLinkView(View):
         try:
             link.validate(request)
         except InvalidTokenUse as ex:
-            link.log_use(request, status_code=403)
+            link.log_error(request, ex)
             return render(
                 request,
                 template_name="error.html",
@@ -66,7 +66,7 @@ class MagicLinkView(View):
                 status=403,
             )
         else:
-            link.log_use(request, status_code=302)
-            link.disable()
+            link.log_use(request)
             link.login(request)
+            link.disable()
             return HttpResponseRedirect(link.redirect_to)

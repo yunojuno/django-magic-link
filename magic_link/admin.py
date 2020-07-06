@@ -12,7 +12,7 @@ class MagicLinkUseInline(admin.TabularInline):
         "remote_addr",
         "http_method",
         "link_is_valid",
-        "http_status_code",
+        "error",
     )
     exclude = ("ua_string",)
     extra = 0
@@ -51,6 +51,7 @@ class MagicLinkUseAdmin(admin.ModelAdmin):
         "remote_addr",
         "http_method",
         "ua_string",
+        "error",
         "link_is_valid",
     )
     ordering = ("-timestamp",)
