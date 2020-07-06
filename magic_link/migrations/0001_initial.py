@@ -51,14 +51,14 @@ class Migration(migrations.Migration):
                     "created_at",
                     models.DateTimeField(
                         default=django.utils.timezone.now,
-                        help_text="When the token was originally created",
+                        help_text="When the link was originally created",
                     ),
                 ),
                 (
                     "expires_at",
                     models.DateTimeField(
                         default=magic_link.models.link_expires_at,
-                        help_text="When the token is due to expire (uses DEFAULT_EXPIRY)",
+                        help_text="When the link is due to expire (uses DEFAULT_EXPIRY)",
                     ),
                 ),
                 (

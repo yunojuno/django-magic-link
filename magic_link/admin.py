@@ -20,7 +20,7 @@ class MagicLinkUseInline(admin.TabularInline):
 
 class MagicLinkAdmin(admin.ModelAdmin):
 
-    list_display = ("user", "token", "expires_at", "is_active", "is_valid")
+    list_display = ("user", "token", "expires_at", "logged_in_at", "is_active")
     search_fields = (
         "user__first_name",
         "user__last_name",

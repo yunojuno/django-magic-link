@@ -11,7 +11,13 @@ from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import timezone
 
-from .exceptions import ExpiredToken, InactiveToken, InvalidTokenUse, UserMismatch
+from .exceptions import (
+    ExpiredToken,
+    InactiveToken,
+    InvalidTokenUse,
+    UsedToken,
+    UserMismatch,
+)
 from .settings import DEFAULT_EXPIRY, DEFAULT_REDIRECT
 
 
@@ -48,11 +54,14 @@ class MagicLink(models.Model):
         default=DEFAULT_REDIRECT,
     )
     created_at = models.DateTimeField(
-        default=timezone.now, help_text="When the token was originally created"
+        default=timezone.now, help_text="When the link was originally created"
     )
     expires_at = models.DateTimeField(
-        help_text="When the token is due to expire (uses DEFAULT_EXPIRY)",
+        help_text="When the link is due to expire (uses DEFAULT_EXPIRY)",
         default=link_expires_at,
+    )
+    logged_in_at = models.DateTimeField(
+        help_text="When the link was used to login", blank=True, null=True
     )
     is_active = models.BooleanField(
         default=True, help_text="Set to False to deactivate the token"
@@ -69,15 +78,20 @@ class MagicLink(models.Model):
 
     @property
     def has_expired(self) -> Optional[bool]:
-        """Return True if the token is past its expiry timestamp."""
+        """Return True if the link is past its expiry timestamp."""
         if self.expires_at:
             return self.expires_at < timezone.now()
         return None
 
     @property
+    def has_been_used(self) -> bool:
+        """Return True if the link has been used to login already."""
+        return self.logged_in_at is not None
+
+    @property
     def is_valid(self) -> bool:
-        """Return False if link has expired or been marked as inactive."""
-        return self.is_active and not self.has_expired
+        """Return True if the link can be used."""
+        return self.is_active and not self.has_expired and not self.has_been_used
 
     def validate(self, request: HttpRequest) -> None:
         """
@@ -93,6 +107,8 @@ class MagicLink(models.Model):
             raise InactiveToken("Link is inactive")
         if self.has_expired:
             raise ExpiredToken("Link has expired")
+        if self.has_been_used:
+            raise UsedToken("Link has already been used")
         if request.user.is_anonymous:
             return
         if request.user != self.user:
@@ -116,11 +132,12 @@ class MagicLink(models.Model):
     def login(self, request: HttpRequest) -> None:
         """Call login as the link.user."""
         login(request, self.user)
+        self.logged_in_at = timezone.now()
+        self.save()
 
     def disable(self) -> None:
-        """Disable the link (no further uses)."""
+        """Disable the link regardless of expiry - used as a kill switch."""
         self.is_active = False
-        self.expires_at = timezone.now()
         self.save()
 
 
