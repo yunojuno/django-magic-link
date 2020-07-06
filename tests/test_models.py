@@ -117,7 +117,7 @@ class TestMagicLink:
         request = mock.Mock(
             spec=HttpRequest, method="GET", user=user, headers=headers, session=session
         )
-        log = link.log_error(request, InvalidTokenUse("Test error"))
+        log = link.log_use(request, InvalidTokenUse("Test error"))
         assert log.error == "Test error"
 
     @pytest.mark.django_db

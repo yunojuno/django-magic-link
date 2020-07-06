@@ -98,7 +98,7 @@ class MagicLink(models.Model):
         if request.user != self.user:
             raise UserMismatch("User mismatch")
 
-    def log_use(self, request: HttpRequest) -> MagicLinkUse:
+    def log_use(self, request: HttpRequest, error: InvalidTokenUse=None) -> MagicLinkUse:
         """Create a MagicLinkUse from an HtttpRequest."""
         return MagicLinkUse.objects.create(
             link=self,
@@ -108,19 +108,7 @@ class MagicLink(models.Model):
             ua_string=parse_ua_string(request),
             session_key=request.session.session_key or "",
             link_is_valid=self.is_valid,
-        )
-
-    def log_error(self, request: HttpRequest, error: InvalidTokenUse) -> MagicLinkUse:
-        """Create a MagicLinkUse from an HtttpRequest that failed."""
-        return MagicLinkUse.objects.create(
-            link=self,
-            timestamp=timezone.now(),
-            http_method=request.method,
-            remote_addr=parse_remote_addr(request),
-            ua_string=parse_ua_string(request),
-            session_key=request.session.session_key or "",
-            link_is_valid=self.is_valid,
-            error=str(error),
+            error=str(error) if error else ""
         )
 
     def login(self, request: HttpRequest) -> None:

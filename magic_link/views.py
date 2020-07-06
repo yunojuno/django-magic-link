@@ -24,7 +24,7 @@ class MagicLinkView(View):
         try:
             link.validate(request)
         except InvalidTokenUse as ex:
-            link.log_error(request, ex)
+            link.log_use(request, ex)
             return render(
                 request,
                 template_name="error.html",
@@ -58,7 +58,7 @@ class MagicLinkView(View):
         try:
             link.validate(request)
         except InvalidTokenUse as ex:
-            link.log_error(request, ex)
+            link.log_use(request, ex)
             return render(
                 request,
                 template_name="error.html",
