@@ -1,9 +1,11 @@
 import logging
 
+from django.db import transaction
 from django.http import HttpRequest
 from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.views import View
+
 from magic_link.models import InvalidTokenUse, MagicLink
 
 logger = logging.getLogger(__name__)
@@ -38,6 +40,7 @@ class MagicLinkView(View):
                 status=200,
             )
 
+    @transaction.atomic
     def post(self, request: HttpRequest, token: str) -> HttpResponse:
         """
         Handle the login POST request.
@@ -63,7 +66,7 @@ class MagicLinkView(View):
                 status=403,
             )
         else:
-            link.login(request)
             link.log_use(request, status_code=302)
             link.disable()
+            link.login(request)
             return HttpResponseRedirect(link.redirect_to)

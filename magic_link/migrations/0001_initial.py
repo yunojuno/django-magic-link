@@ -3,9 +3,10 @@ import uuid
 
 import django.db.models.deletion
 import django.utils.timezone
-import magic_link.models
 from django.conf import settings
 from django.db import migrations, models
+
+import magic_link.models
 
 
 class Migration(migrations.Migration):

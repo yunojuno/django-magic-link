@@ -121,6 +121,7 @@ class MagicLink(models.Model):
     def disable(self) -> None:
         """Disable the link (no further uses)."""
         self.is_active = False
+        self.expires_at = timezone.now()
         self.save()
 
 
