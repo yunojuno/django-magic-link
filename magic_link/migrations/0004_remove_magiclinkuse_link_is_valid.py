@@ -6,12 +6,9 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('magic_link', '0003_magiclink_accessed_at'),
+        ("magic_link", "0003_magiclink_accessed_at"),
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='magiclinkuse',
-            name='link_is_valid',
-        ),
+        migrations.RemoveField(model_name="magiclinkuse", name="link_is_valid",),
     ]

@@ -200,8 +200,3 @@ class MagicLinkUse(models.Model):
             f"<MagicLinkUse id={self.id} link_id={self.link_id} "
             f"timestamp='{self.timestamp}''>"
         )
-
-    @property
-    def logged_in(self):
-        """Return True if this was the login use."""
-        return self.timestamp == self.link.logged_in_at
