@@ -152,12 +152,12 @@ Settings are read from the environment first, then Django settings.
 
 **Default landing page (`logmein.html`)**
 
-<img src="/screenshots/landing-page.png" width=600 alt="Screenshot of default landing page" />
+<img src="https://raw.githubusercontent.com/yunojuno/django-magic-link/master/screenshots/landing-page.png" width=600 alt="Screenshot of default landing page" />
 
 **Default error page (`error.html`)**
 
-<img src="/screenshots/error-page.png" width=600 alt="Screenshot of default error page" />
+<img src="https://raw.githubusercontent.com/yunojuno/django-magic-link/master/screenshots/error-page.png" width=600 alt="Screenshot of default error page" />
 
 **Admin view of magic link uses**
 
-<img src="/screenshots/admin-inline.png" width=600 alt="Screenshot of MagicLinkUseInline" />
+<img src="https://raw.githubusercontent.com/yunojuno/django-magic-link/master/screenshots/admin-inline.png" width=600 alt="Screenshot of MagicLinkUseInline" />
