@@ -93,6 +93,40 @@ This package does not handle the sending on your behalf - it is your responsibil
 you send the link to the correct user. If you send the link to the wrong user, they will have full
 access to the link user's account. **YOU HAVE BEEN WARNED**.
 
+## Auditing
+
+A core requirement of this package is to be able to audit the use of links - for monitoring and analysis. To enable this we have a second model, `MagicLinkUse`, and we create a new object for every request to a link URL, _regardless of outcome_. Questions that we want to have answers for include:
+
+* How long does it take for users to click on a link?
+* How many times is a link used before the POST login?
+* How often is a link used _after_ a successful login?
+* How often does a link expire before a successful login?
+
+In order to facilitate this analysis we denormalise a number of timestamps from the `MagicLinkUse` object back onto the `MagicLink` itself:
+
+* `created_at` - when the record was created in the database
+* `accessed_at` - the first GET request to the link URL
+* `logged_in_at` - the successful POST
+* `expires_at` - the link expiry, set when the link is created.
+
+Note that the expiry timestamp is **not** updated when the link is used. This is by design, to retain the original expiry timestamp.
+
+### Active vs. Valid
+
+In addition to the timestamp fields, there is a separate boolean flag, `is_active`. This acts as a "kill switch" that overrides any other attribute, and it allows a link to be disabled without having to edit (or destroy) existing timestamp values. You can deactivate all links in one hit by calling `MagicLink.objects.deactivate()`.
+
+A link's `is_valid` property combines both `is_active` and timestamp data to return a bool value that defines whether a link can used, based on the following criteria:
+
+1. The link is active (`is_active`)
+2. The link has not expired (`expires_at`)
+3. The link has not already been used (`logged_in_at`)
+
+### Validating a Request
+
+If the link's `is_valid` property returns `True`, then the link _can_ be used. However, this does not mean that the link can be used by anyone. We do not allow authenticated users to login using someone else's magic link. The `MagicLink.validate()` method takes an `HttpReqest` argument and determines whether the current request can be used to log in. If the `request.user` is authenticated, and does not match the `link.user`, then the request is denied.
+
+
+
 ## Settings
 
 Settings are read from the environment first, then Django settings.
