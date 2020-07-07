@@ -16,7 +16,7 @@ class TestMagicLinkViewGet:
         client = Client()
         user = User.objects.create(username="Bob Loblaw")
         link = MagicLink.objects.create(user=user, is_active=False)
-        assert not link.is_valid
+        # assert not link.is_valid
         response = client.get(link.get_absolute_url())
         assert response.status_code == 403
 
@@ -25,7 +25,7 @@ class TestMagicLinkViewGet:
         user = User.objects.create(username="Bob Loblaw")
         user2 = User.objects.create(username="Job")
         link = MagicLink.objects.create(user=user)
-        assert link.is_valid
+        # assert link.is_valid
         client.force_login(user2)
         response = client.get(link.get_absolute_url())
         assert response.status_code == 403
@@ -49,7 +49,6 @@ class TestMagicLinkViewPost:
         client = Client()
         user = User.objects.create(username="Bob Loblaw")
         link = MagicLink.objects.create(user=user, is_active=False)
-        assert not link.is_valid
         response = client.post(link.get_absolute_url())
         assert response.status_code == 403
 
@@ -58,11 +57,9 @@ class TestMagicLinkViewPost:
         user = User.objects.create(username="Bob Loblaw")
         user2 = User.objects.create(username="Job")
         link = MagicLink.objects.create(user=user)
-        assert link.is_valid
         client.force_login(user2)
         response = client.post(link.get_absolute_url())
         link.refresh_from_db()
-        assert link.is_valid
         assert response.status_code == 403
 
     def test_post_valid_request(self):
@@ -70,8 +67,9 @@ class TestMagicLinkViewPost:
         client = Client()
         user = User.objects.create(username="Bob Loblaw")
         link = MagicLink.objects.create(user=user, redirect_to="/foo/bar")
-        assert link.is_valid
         response = client.post(link.get_absolute_url())
         link.refresh_from_db()
         assert response.status_code == 302
         assert response.url == link.redirect_to
+        assert not link.is_active
+        assert link.logged_in_at is not None

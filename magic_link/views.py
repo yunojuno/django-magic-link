@@ -66,7 +66,7 @@ class MagicLinkView(View):
                 status=403,
             )
         else:
-            link.audit(request)
             link.login(request)
+            link.audit(request, timestamp=link.logged_in_at)
             link.disable()
             return HttpResponseRedirect(link.redirect_to)

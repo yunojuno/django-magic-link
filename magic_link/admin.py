@@ -3,7 +3,18 @@ from django.contrib import admin
 from .models import MagicLink, MagicLinkUse
 
 
-class MagicLinkUseInline(admin.TabularInline):
+class LoggedInMixin:
+    """Mixin used to provide a logged_in method for display purposes."""
+
+    def logged_in(self, obj: MagicLinkUse) -> bool:
+        """Return True if the object was the one used to login."""
+        return obj.timestamp == obj.link.logged_in_at
+
+    logged_in.boolean = True  # type: ignore
+    logged_in.short_description = "Used for login"  # type: ignore
+
+
+class MagicLinkUseInline(LoggedInMixin, admin.TabularInline):
     model = MagicLinkUse
     readonly_fields = (
         "link",
@@ -11,7 +22,7 @@ class MagicLinkUseInline(admin.TabularInline):
         "session_key",
         "remote_addr",
         "http_method",
-        "link_is_valid",
+        "logged_in",
         "error",
     )
     exclude = ("ua_string",)
@@ -20,7 +31,15 @@ class MagicLinkUseInline(admin.TabularInline):
 
 class MagicLinkAdmin(admin.ModelAdmin):
 
-    list_display = ("user", "token", "expires_at", "is_active", "is_valid")
+    list_display = (
+        "user",
+        "token",
+        "expires_at",
+        "accessed_at",
+        "logged_in_at",
+        "is_active",
+        "has_been_used",
+    )
     search_fields = (
         "user__first_name",
         "user__last_name",
@@ -28,7 +47,15 @@ class MagicLinkAdmin(admin.ModelAdmin):
         "token",
     )
     raw_id_fields = ("user",)
-    readonly_fields = ("token", "created_at", "has_expired")
+    readonly_fields = (
+        "token",
+        "created_at",
+        "expires_at",
+        "accessed_at",
+        "logged_in_at",
+        "has_expired",
+        "has_been_used",
+    )
     ordering = ("-created_at",)
     inlines = (MagicLinkUseInline,)
 
@@ -36,9 +63,9 @@ class MagicLinkAdmin(admin.ModelAdmin):
 admin.site.register(MagicLink, MagicLinkAdmin)
 
 
-class MagicLinkUseAdmin(admin.ModelAdmin):
+class MagicLinkUseAdmin(LoggedInMixin, admin.ModelAdmin):
 
-    list_display = ("link", "http_method", "session_key", "link_is_valid")
+    list_display = ("link", "http_method", "session_key", "logged_in")
     search_fields = (
         "session_key",
         "link__token",
@@ -52,7 +79,7 @@ class MagicLinkUseAdmin(admin.ModelAdmin):
         "http_method",
         "ua_string",
         "error",
-        "link_is_valid",
+        "logged_in",
     )
     ordering = ("-timestamp",)
 
