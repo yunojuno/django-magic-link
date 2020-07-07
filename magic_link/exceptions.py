@@ -1,14 +1,14 @@
-class InvalidToken(Exception):
-    pass
+class InvalidLink(Exception):
+    """Generic base exception for invalid link errors."""
 
 
-class InactiveToken(InvalidToken):
-    pass
+class InactiveLink(InvalidLink):
+    """Raised if link is marked as inactive."""
 
 
-class ExpiredToken(InvalidToken):
-    pass
+class ExpiredLink(InvalidLink):
+    """Raised if link has expired."""
 
 
-class UsedToken(InvalidToken):
-    pass
+class UsedLink(InvalidLink):
+    """Raised if the link has already been used."""

@@ -12,7 +12,7 @@ from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import timezone
 
-from .exceptions import ExpiredToken, InactiveToken, InvalidToken, UsedToken
+from .exceptions import ExpiredLink, InactiveLink, InvalidLink, UsedLink
 from .settings import AUTHENTICATION_BACKEND, DEFAULT_EXPIRY, DEFAULT_REDIRECT
 
 
@@ -93,51 +93,26 @@ class MagicLink(models.Model):
 
     def validate(self) -> None:
         """
-        Check token and request and raise InvalidToken if necessary.
+        Check token and request and raise InvalidLink if necessary.
 
         This method checks the is_valid property, and if found to be False,
         it then runs through the possibilities and raises an appropriate error.
 
         """
         if not self.is_active:
-            raise InactiveToken("Link is inactive")
+            raise InactiveLink("Link is inactive")
         if self.has_expired:
-            raise ExpiredToken("Link has expired")
+            raise ExpiredLink("Link has expired")
         if self.has_been_used:
-            raise UsedToken("Link has already been used")
+            raise UsedLink("Link has already been used")
         # theoretically impossible, but belt-and-braces -
         # ensures that is_valid and validate method are kept in sync.
         if not self.is_valid:
-            raise InvalidToken("Link is invalid")
-
-    def audit(
-        self,
-        request: HttpRequest,
-        error: InvalidToken = None,
-        timestamp: datetime.datetime = None,
-    ) -> MagicLinkUse:
-        """Create a MagicLinkUse from an HtttpRequest."""
-        log = MagicLinkUse.objects.create(
-            link=self,
-            timestamp=timestamp or timezone.now(),
-            http_method=request.method,
-            remote_addr=parse_remote_addr(request),
-            ua_string=parse_ua_string(request),
-            session_key=request.session.session_key or "",
-            error=str(error) if error else "",
-        )
-        if not self.accessed_at:
-            self.accessed_at = log.timestamp
-            self.save()
-        return log
+            raise InvalidLink("Link is invalid")
 
     def authorize(self, user: settings.AUTH_USER_MODEL) -> None:
         """
-        Wrap the MagicLinkAuthBackend authenticate method.
-
-        We don't return a User object from this as we already know who the
-        user is from the link. This method is confirming that the request.user
-        has access to the link.
+        Check the user may access this link.
 
         Raises PermissionDenied if the user is authenticated already, and is not
         the user defined in the link.
@@ -156,6 +131,33 @@ class MagicLink(models.Model):
         """Disable the link regardless of expiry - used as a kill switch."""
         self.is_active = False
         self.save()
+
+    def audit(
+        self,
+        request: HttpRequest,
+        error: InvalidLink = None,
+        timestamp: datetime.datetime = None,
+    ) -> MagicLinkUse:
+        """
+        Create a MagicLinkUse from an HtttpRequest.
+
+        The timestamp parameter is used to force the timestamp of the log to a specific
+        value - this is useful for aligning logs with parent link values.
+
+        """
+        log = MagicLinkUse.objects.create(
+            link=self,
+            timestamp=timestamp or timezone.now(),
+            http_method=request.method,
+            remote_addr=parse_remote_addr(request),
+            ua_string=parse_ua_string(request),
+            session_key=request.session.session_key or "",
+            error=str(error) if error else "",
+        )
+        if not self.accessed_at:
+            self.accessed_at = log.timestamp
+            self.save()
+        return log
 
 
 class MagicLinkUse(models.Model):

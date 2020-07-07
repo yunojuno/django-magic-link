@@ -7,7 +7,7 @@ from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.views import View
 
-from magic_link.models import InvalidToken, MagicLink
+from magic_link.models import InvalidLink, MagicLink
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class MagicLinkView(View):
         try:
             link.validate()
             link.authorize(request.user)
-        except (PermissionDenied, InvalidToken) as ex:
+        except (PermissionDenied, InvalidLink) as ex:
             link.audit(request, error=ex)
             return render(
                 request,
@@ -60,7 +60,7 @@ class MagicLinkView(View):
         try:
             link.validate()
             link.authorize(request.user)
-        except (PermissionDenied, InvalidToken) as ex:
+        except (PermissionDenied, InvalidLink) as ex:
             link.audit(request, error=ex)
             return render(
                 request,

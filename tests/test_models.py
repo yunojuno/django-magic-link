@@ -9,7 +9,7 @@ from django.core.exceptions import PermissionDenied
 from django.http.request import HttpRequest
 from django.utils import timezone
 
-from magic_link.exceptions import ExpiredToken, InactiveToken, InvalidToken, UsedToken
+from magic_link.exceptions import ExpiredLink, InactiveLink, InvalidLink, UsedLink
 from magic_link.models import (
     MagicLink,
     MagicLinkUse,
@@ -61,17 +61,17 @@ class TestMagicLink:
 
     def test_validate__inactive(self):
         link = MagicLink(is_active=False)
-        with pytest.raises(InactiveToken):
+        with pytest.raises(InactiveLink):
             link.validate()
 
     def test_validate__expired(self):
         link = MagicLink(expires_at=timezone.now())
-        with pytest.raises(ExpiredToken):
+        with pytest.raises(ExpiredLink):
             link.validate()
 
     def test_validate__used(self):
         link = MagicLink(logged_in_at=timezone.now())
-        with pytest.raises(UsedToken):
+        with pytest.raises(UsedLink):
             link.validate()
 
     def test_authorize__anonymous(self):
@@ -105,6 +105,14 @@ class TestMagicLink:
             link.login(request)
             assert mock_login.called_once_with(request, link.user)
             assert link.logged_in_at == FREEZE_TIME_NOW
+
+    @pytest.mark.django_db
+    def test_disable(self):
+        user = User.objects.create(username="Bob Loblaw")
+        link = MagicLink.objects.create(user=user)
+        assert link.is_active
+        link.disable()
+        assert not link.is_active
 
     @pytest.mark.django_db
     def test_audit(self):
@@ -166,14 +174,6 @@ class TestMagicLink:
         request = mock.Mock(
             spec=HttpRequest, method="GET", user=user, headers=headers, session=session
         )
-        log = link.audit(request, InvalidToken("Test error"))
+        log = link.audit(request, InvalidLink("Test error"))
         assert log.link == link
         assert log.error == "Test error"
-
-    @pytest.mark.django_db
-    def test_disable(self):
-        user = User.objects.create(username="Bob Loblaw")
-        link = MagicLink.objects.create(user=user)
-        assert link.is_active
-        link.disable()
-        assert not link.is_active
