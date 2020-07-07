@@ -1,7 +1,10 @@
+import datetime
 from unittest import mock
 
+import freezegun
 import pytest
 from django.contrib.auth.models import AnonymousUser, User
+from django.contrib.sessions.backends.base import SessionBase
 from django.http.request import HttpRequest
 from django.utils import timezone
 
@@ -17,6 +20,9 @@ from magic_link.models import (
     parse_remote_addr,
     parse_ua_string,
 )
+
+# standard "now" time used for freezegun
+FREEZE_TIME_NOW = timezone.now()
 
 
 class TestMAgicLinkFunctions:
@@ -87,29 +93,69 @@ class TestMagicLink:
         request = mock.Mock(spec=HttpRequest, user=AnonymousUser())
         link.validate(request)
 
+    @freezegun.freeze_time(FREEZE_TIME_NOW)
     @pytest.mark.django_db
     def test_login(self):
         # Regression test only - not functionally useful.
         user = User.objects.create_user(username="Fernando")
         link = MagicLink(user=user)
+        assert not link.logged_in_at
         request = mock.Mock(spec=HttpRequest, user=link.user)
         with mock.patch("magic_link.models.login") as mock_login:
             link.login(request)
             assert mock_login.called_once_with(request, link.user)
+            assert link.logged_in_at == FREEZE_TIME_NOW
 
     @pytest.mark.django_db
     def test_audit(self):
         user = User.objects.create(username="Job Bluth")
         link = MagicLink.objects.create(user=user)
-        headers = {"X-Forwarded-For": "127.0.0.1", "User-Agent": "Chrome"}
-        session = mock.Mock(session_key="")
         request = mock.Mock(
-            spec=HttpRequest, method="GET", user=user, headers=headers, session=session
+            spec=HttpRequest,
+            method="GET",
+            user=user,
+            headers={"X-Forwarded-For": "127.0.0.1", "User-Agent": "Chrome"},
+            session=mock.Mock(spec=SessionBase, session_key=""),
         )
         log = link.audit(request)
         assert MagicLinkUse.objects.count() == 1
         assert log.link == link
         assert log.error == ""
+        assert link.accessed_at == log.timestamp
+
+    @pytest.mark.django_db
+    def test_audit__accessed_at(self):
+        """Check that accessed_at is not overwritten by a second visit."""
+        user = User.objects.create(username="Job Bluth")
+        link = MagicLink.objects.create(user=user, accessed_at=FREEZE_TIME_NOW)
+        request = mock.Mock(
+            spec=HttpRequest,
+            method="GET",
+            user=user,
+            headers={"X-Forwarded-For": "127.0.0.1", "User-Agent": "Chrome"},
+            session=mock.Mock(spec=SessionBase, session_key=""),
+        )
+        assert timezone.now() != FREEZE_TIME_NOW
+        log = link.audit(request)
+        assert link.accessed_at == FREEZE_TIME_NOW
+
+    @pytest.mark.django_db
+    def test_audit__timestamp(self):
+        user = User.objects.create(username="Job Bluth")
+        link = MagicLink.objects.create(user=user)
+        request = mock.Mock(
+            spec=HttpRequest,
+            method="GET",
+            user=user,
+            headers={"X-Forwarded-For": "127.0.0.1", "User-Agent": "Chrome"},
+            session=mock.Mock(spec=SessionBase, session_key=""),
+        )
+        # create a timestamp that differs from 'now'
+        with freezegun.freeze_time(FREEZE_TIME_NOW):
+            timestamp = FREEZE_TIME_NOW - datetime.timedelta(seconds=10)
+            log = link.audit(request, timestamp=timestamp)
+            assert log.timestamp == timestamp
+            assert log.timestamp != FREEZE_TIME_NOW
 
     @pytest.mark.django_db
     def test_log_error(self):

@@ -60,6 +60,9 @@ class MagicLink(models.Model):
         help_text="When the link is due to expire (uses DEFAULT_EXPIRY)",
         default=link_expires_at,
     )
+    accessed_at = models.DateTimeField(
+        help_text="When the link was first used (GET)", blank=True, null=True
+    )
     logged_in_at = models.DateTimeField(
         help_text="When the link was used to login", blank=True, null=True
     )
@@ -115,12 +118,15 @@ class MagicLink(models.Model):
             raise UserMismatch("User mismatch")
 
     def audit(
-        self, request: HttpRequest, error: InvalidTokenUse = None
+        self,
+        request: HttpRequest,
+        error: InvalidTokenUse = None,
+        timestamp: datetime.datetime = None,
     ) -> MagicLinkUse:
         """Create a MagicLinkUse from an HtttpRequest."""
-        return MagicLinkUse.objects.create(
+        log = MagicLinkUse.objects.create(
             link=self,
-            timestamp=timezone.now(),
+            timestamp=timestamp or timezone.now(),
             http_method=request.method,
             remote_addr=parse_remote_addr(request),
             ua_string=parse_ua_string(request),
@@ -128,6 +134,10 @@ class MagicLink(models.Model):
             link_is_valid=self.is_valid,
             error=str(error) if error else "",
         )
+        if not self.accessed_at:
+            self.accessed_at = log.timestamp
+            self.save()
+        return log
 
     def login(self, request: HttpRequest) -> None:
         """Call login as the link.user."""
