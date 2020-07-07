@@ -131,7 +131,6 @@ class MagicLink(models.Model):
             remote_addr=parse_remote_addr(request),
             ua_string=parse_ua_string(request),
             session_key=request.session.session_key or "",
-            link_is_valid=self.is_valid,
             error=str(error) if error else "",
         )
         if not self.accessed_at:
@@ -182,10 +181,6 @@ class MagicLinkUse(models.Model):
         help_text="The client User-Agent, extracted from HttpRequest headers",
         blank=True,
     )
-    link_is_valid = models.BooleanField(
-        help_text=("Snapshot of parent link is_valid property at the time of use"),
-        default=True,
-    )
     error = models.CharField(
         max_length=100,
         help_text="If the link use failed the error will be recorded here",
@@ -205,3 +200,8 @@ class MagicLinkUse(models.Model):
             f"<MagicLinkUse id={self.id} link_id={self.link_id} "
             f"timestamp='{self.timestamp}''>"
         )
+
+    @property
+    def logged_in(self):
+        """Return True if this was the login use."""
+        return self.timestamp == self.link.logged_in_at

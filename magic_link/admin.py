@@ -11,16 +11,22 @@ class MagicLinkUseInline(admin.TabularInline):
         "session_key",
         "remote_addr",
         "http_method",
-        "link_is_valid",
+        "_logged_in",
         "error",
     )
     exclude = ("ua_string",)
     extra = 0
 
+    def _logged_in(self, obj):
+        """Used to enable 'boolean' display in admin."""
+        return obj.logged_in
+
+    _logged_in.boolean = True
+
 
 class MagicLinkAdmin(admin.ModelAdmin):
 
-    list_display = ("user", "token", "expires_at", "logged_in_at", "is_active")
+    list_display = ("user", "token", "expires_at", "accessed_at", "logged_in_at", "is_active", "has_been_used")
     search_fields = (
         "user__first_name",
         "user__last_name",
@@ -28,7 +34,7 @@ class MagicLinkAdmin(admin.ModelAdmin):
         "token",
     )
     raw_id_fields = ("user",)
-    readonly_fields = ("token", "created_at", "has_expired")
+    readonly_fields = ("token", "created_at", "expires_at", "accessed_at", "logged_in_at", "has_expired", "has_been_used")
     ordering = ("-created_at",)
     inlines = (MagicLinkUseInline,)
 
@@ -38,7 +44,7 @@ admin.site.register(MagicLink, MagicLinkAdmin)
 
 class MagicLinkUseAdmin(admin.ModelAdmin):
 
-    list_display = ("link", "http_method", "session_key", "link_is_valid")
+    list_display = ("link", "http_method", "session_key", "_logged_in")
     search_fields = (
         "session_key",
         "link__token",
@@ -52,9 +58,14 @@ class MagicLinkUseAdmin(admin.ModelAdmin):
         "http_method",
         "ua_string",
         "error",
-        "link_is_valid",
+        "_logged_in",
     )
     ordering = ("-timestamp",)
 
+    def _logged_in(self, obj):
+        """Used to enable 'boolean' display in admin."""
+        return obj.logged_in
+
+    _logged_in.boolean = True
 
 admin.site.register(MagicLinkUse, MagicLinkUseAdmin)

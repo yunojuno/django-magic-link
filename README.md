@@ -101,6 +101,8 @@ A core requirement of this package is to be able to audit the use of links - for
 * How many times is a link used before the POST login?
 * How often is a link used _after_ a successful login?
 * How often does a link expire before a successful login?
+* Can we identify common non-user client requests (email caches, bots, etc)?
+* Should we disable links after X non-POST requests?
 
 In order to facilitate this analysis we denormalise a number of timestamps from the `MagicLinkUse` object back onto the `MagicLink` itself:
 
@@ -124,8 +126,6 @@ A link's `is_valid` property combines both `is_active` and timestamp data to ret
 ### Validating a Request
 
 If the link's `is_valid` property returns `True`, then the link _can_ be used. However, this does not mean that the link can be used by anyone. We do not allow authenticated users to login using someone else's magic link. The `MagicLink.validate()` method takes an `HttpReqest` argument and determines whether the current request can be used to log in. If the `request.user` is authenticated, and does not match the `link.user`, then the request is denied.
-
-
 
 ## Settings
 
