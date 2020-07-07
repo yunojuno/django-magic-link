@@ -1,12 +1,13 @@
 import logging
 
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import HttpRequest
 from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.views import View
 
-from magic_link.models import InvalidTokenUse, MagicLink
+from magic_link.models import InvalidToken, MagicLink
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +23,10 @@ class MagicLinkView(View):
         """
         link = get_object_or_404(MagicLink, token=token)
         try:
-            link.validate(request)
-        except InvalidTokenUse as ex:
-            link.audit(request, ex)
+            link.validate()
+            link.authorize(request.user)
+        except (PermissionDenied, InvalidToken) as ex:
+            link.audit(request, error=ex)
             return render(
                 request,
                 template_name="error.html",
@@ -56,9 +58,10 @@ class MagicLinkView(View):
         """
         link = get_object_or_404(MagicLink, token=token)
         try:
-            link.validate(request)
-        except InvalidTokenUse as ex:
-            link.audit(request, ex)
+            link.validate()
+            link.authorize(request.user)
+        except (PermissionDenied, InvalidToken) as ex:
+            link.audit(request, error=ex)
             return render(
                 request,
                 template_name="error.html",
@@ -67,6 +70,6 @@ class MagicLinkView(View):
             )
         else:
             link.login(request)
-            link.audit(request, timestamp=link.logged_in_at)
             link.disable()
+            link.audit(request, timestamp=link.logged_in_at)
             return HttpResponseRedirect(link.redirect_to)

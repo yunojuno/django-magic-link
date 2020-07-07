@@ -1,18 +1,14 @@
-class InvalidTokenUse(Exception):
+class InvalidToken(Exception):
     pass
 
 
-class InactiveToken(InvalidTokenUse):
+class InactiveToken(InvalidToken):
     pass
 
 
-class ExpiredToken(InvalidTokenUse):
+class ExpiredToken(InvalidToken):
     pass
 
 
-class UsedToken(InvalidTokenUse):
-    pass
-
-
-class UserMismatch(InvalidTokenUse):
+class UsedToken(InvalidToken):
     pass

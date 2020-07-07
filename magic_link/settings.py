@@ -14,3 +14,9 @@ DEFAULT_EXPIRY = _env_or_setting("MAGIC_LINK_DEFAULT_EXPIRY", 60, lambda x: int(
 
 # default redirect URL; defaults to 'root'
 DEFAULT_REDIRECT = _env_or_setting("MAGIC_LINK_DEFAULT_REDIRECT", "/")
+
+
+# the authentication backend used when calling the login method
+AUTHENTICATION_BACKEND = _env_or_setting(
+    "MAGIC_LINK_AUTHENTICATION_BACKEND", "django.contrib.auth.backends.ModelBackend"
+)

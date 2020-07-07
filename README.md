@@ -118,7 +118,7 @@ object back onto the `MagicLink` itself:
 Note that the expiry timestamp is **not** updated when the link is used. This is by design, to
 retain the original expiry timestamp.
 
-### Active vs. Valid
+### Link validation
 
 In addition to the timestamp fields, there is a separate boolean flag, `is_active`. This acts as a
 "kill switch" that overrides any other attribute, and it allows a link to be disabled without having
@@ -132,13 +132,41 @@ that defines whether a link can used, based on the following criteria:
 2. The link has not expired (`expires_at`)
 3. The link has not already been used (`logged_in_at`)
 
-### Validating a Request
+In addition to checking the property `is_valid`, the `validate()` method will raise an exception
+based on the specific condition that failed. This is used by the link view to give feedback to the
+user on the nature of the failure.
+
+### Request authorization
 
 If the link's `is_valid` property returns `True`, then the link _can_ be used. However, this does
 not mean that the link can be used by anyone. We do not allow authenticated users to login using
-someone else's magic link. The `MagicLink.validate()` method takes an `HttpReqest` argument and
-determines whether the current request can be used to log in. If the `request.user` is
-authenticated, and does not match the `link.user`, then the request is denied.
+someone else's magic link. The `authorize()` method takes a `User` argument and determines whether
+they are authorized to use the link. If the user is authenticated, and does not match the
+`link.user`, then a `PermissionDenied` exception is raised.
+
+### Putting it together
+
+Combining the validation, authorization and auditing, we get a simplified flow that looks something
+like this:
+
+```python
+def get(request, token):
+    """Render login page."""
+    link = get_object_or_404(MagicLink, token=token)
+    link.validate()
+    link.authorize(request.user)
+    link.audit()
+    return render("logmein.html")
+
+def post(request, token):
+    """Handle the login POST."""
+    link = get_object_or_404(MagicLink, token=token)
+    link.validate()
+    link.authorize(request.user)
+    link.login(request)
+    link.disable()
+    return redirect(link.redirect_to)
+```
 
 ## Settings
 
@@ -147,6 +175,10 @@ Settings are read from the environment first, then Django settings.
 -   `MAGIC_LINK_DEFAULT_EXPIRY`: the default link expiry, in seconds (defaults to 60 - 1 minute).
 
 -   `MAGIC_LINK_DEFAULT_REDIRECT`: the default redirect URL (defaults to "/").
+
+-   `MAGIC_LINK_AUTHORIZATION_BACKEND`: the preferred authorization backend to use, in the case
+    where you have more than one specified in the `settings.AUTHORIZATION_BACKENDS` setting.
+    Defaults to `django.contrib.auth.backends.ModelBackend`.
 
 ## Screenshots
 
