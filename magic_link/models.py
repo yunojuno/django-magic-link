@@ -6,19 +6,14 @@ from typing import Optional
 
 from django.conf import settings
 from django.contrib.auth import login
+from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import timezone
 
-from .exceptions import (
-    ExpiredToken,
-    InactiveToken,
-    InvalidTokenUse,
-    UsedToken,
-    UserMismatch,
-)
-from .settings import DEFAULT_EXPIRY, DEFAULT_REDIRECT
+from .exceptions import ExpiredLink, InactiveLink, InvalidLink, UsedLink
+from .settings import AUTHENTICATION_BACKEND, DEFAULT_EXPIRY, DEFAULT_REDIRECT
 
 
 def parse_remote_addr(request: HttpRequest) -> str:
@@ -77,7 +72,7 @@ class MagicLink(models.Model):
         return f"<MagicLink id={self.id} user_id={self.user_id} token='{self.token}'>'"
 
     def get_absolute_url(self) -> str:
-        return reverse("use_magic_link", kwargs={"token": self.token})
+        return reverse("magic_link", kwargs={"token": self.token})
 
     @property
     def has_expired(self) -> Optional[bool]:
@@ -96,34 +91,60 @@ class MagicLink(models.Model):
         """Return True if the link can be used."""
         return self.is_active and not self.has_expired and not self.has_been_used
 
-    def validate(self, request: HttpRequest) -> None:
+    def validate(self) -> None:
         """
-        Check token and request and raise InvalidToken if necessary.
+        Check token and request and raise InvalidLink if necessary.
 
-        In addition to the link itself, this method checks that the HttpRequest is
-        valid - which means that it is either unauthenticated, or authenticated as
-        the user to whom this link refers. You cannot use a magic link to log in as
-        someone else if you are already logged in.
+        This method checks the is_valid property, and if found to be False,
+        it then runs through the possibilities and raises an appropriate error.
 
         """
         if not self.is_active:
-            raise InactiveToken("Link is inactive")
+            raise InactiveLink("Link is inactive")
         if self.has_expired:
-            raise ExpiredToken("Link has expired")
+            raise ExpiredLink("Link has expired")
         if self.has_been_used:
-            raise UsedToken("Link has already been used")
-        if request.user.is_anonymous:
-            return
-        if request.user != self.user:
-            raise UserMismatch("User mismatch")
+            raise UsedLink("Link has already been used")
+        # theoretically impossible, but belt-and-braces -
+        # ensures that is_valid and validate method are kept in sync.
+        if not self.is_valid:
+            raise InvalidLink("Link is invalid")
+
+    def authorize(self, user: settings.AUTH_USER_MODEL) -> None:
+        """
+        Check the user may access this link.
+
+        Raises PermissionDenied if the user is authenticated already, and is not
+        the user defined in the link.
+
+        """
+        if user.is_authenticated and user != self.user:
+            raise PermissionDenied("User is already logged in as another user.")
+
+    def login(self, request: HttpRequest) -> None:
+        """Call login as the link.user."""
+        login(request, self.user, backend=AUTHENTICATION_BACKEND)
+        self.logged_in_at = timezone.now()
+        self.save()
+
+    def disable(self) -> None:
+        """Disable the link regardless of expiry - used as a kill switch."""
+        self.is_active = False
+        self.save()
 
     def audit(
         self,
         request: HttpRequest,
-        error: InvalidTokenUse = None,
+        error: InvalidLink = None,
         timestamp: datetime.datetime = None,
     ) -> MagicLinkUse:
-        """Create a MagicLinkUse from an HtttpRequest."""
+        """
+        Create a MagicLinkUse from an HtttpRequest.
+
+        The timestamp parameter is used to force the timestamp of the log to a specific
+        value - this is useful for aligning logs with parent link values.
+
+        """
         log = MagicLinkUse.objects.create(
             link=self,
             timestamp=timestamp or timezone.now(),
@@ -137,17 +158,6 @@ class MagicLink(models.Model):
             self.accessed_at = log.timestamp
             self.save()
         return log
-
-    def login(self, request: HttpRequest) -> None:
-        """Call login as the link.user."""
-        login(request, self.user)
-        self.logged_in_at = timezone.now()
-        self.save()
-
-    def disable(self) -> None:
-        """Disable the link regardless of expiry - used as a kill switch."""
-        self.is_active = False
-        self.save()
 
 
 class MagicLinkUse(models.Model):

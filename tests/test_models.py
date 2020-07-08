@@ -5,15 +5,11 @@ import freezegun
 import pytest
 from django.contrib.auth.models import AnonymousUser, User
 from django.contrib.sessions.backends.base import SessionBase
+from django.core.exceptions import PermissionDenied
 from django.http.request import HttpRequest
 from django.utils import timezone
 
-from magic_link.exceptions import (
-    ExpiredToken,
-    InactiveToken,
-    InvalidTokenUse,
-    UserMismatch,
-)
+from magic_link.exceptions import ExpiredLink, InactiveLink, InvalidLink, UsedLink
 from magic_link.models import (
     MagicLink,
     MagicLinkUse,
@@ -50,17 +46,11 @@ class TestMAgicLinkFunctions:
 
 
 class TestMagicLink:
-    # def test_is_valid(self):
-    #     link = MagicLink()
-    #     assert link.is_active
-    #     assert not link.has_expired
-    #     assert link.is_valid
-
-    def test_is_inactive(self):
-        link = MagicLink(user=User(), is_active=False)
-        assert not link.is_active
-        assert not link.has_expired
-        # assert not link.is_valid
+    def test_has_been_used(self):
+        link = MagicLink(user=User(), logged_in_at=None)
+        assert not link.has_been_used
+        link.logged_in_at = timezone.now()
+        assert link.has_been_used
 
     def test_has_expired(self):
         link = MagicLink(user=User(), expires_at=None)
@@ -68,30 +58,40 @@ class TestMagicLink:
         link = MagicLink(user=User(), expires_at=timezone.now())
         assert link.is_active
         assert link.has_expired
-        # assert not link.is_valid
 
     def test_validate__inactive(self):
         link = MagicLink(is_active=False)
-        request = mock.Mock(spec=HttpRequest)
-        with pytest.raises(InactiveToken):
-            link.validate(request)
+        with pytest.raises(InactiveLink):
+            link.validate()
 
     def test_validate__expired(self):
         link = MagicLink(expires_at=timezone.now())
-        request = mock.Mock(spec=HttpRequest)
-        with pytest.raises(ExpiredToken):
-            link.validate(request)
+        with pytest.raises(ExpiredLink):
+            link.validate()
 
-    def test_validate__wrong_user(self):
-        link = MagicLink(user=User(id=1))
-        request = mock.Mock(spec=HttpRequest, user=User(id=2))
-        with pytest.raises(UserMismatch):
-            link.validate(request)
+    def test_validate__used(self):
+        link = MagicLink(logged_in_at=timezone.now())
+        with pytest.raises(UsedLink):
+            link.validate()
 
-    def test_validate__anonymous(self):
-        link = MagicLink()
-        request = mock.Mock(spec=HttpRequest, user=AnonymousUser())
-        link.validate(request)
+    def test_authorize__anonymous(self):
+        """Check that an anonymous user can access the link."""
+        user1 = User(id=1)
+        link = MagicLink(user=user1)
+        link.authorize(AnonymousUser())
+
+    def test_authorize__link_user(self):
+        """Check that the link user themselves can access it."""
+        user1 = User(id=1)
+        link = MagicLink(user=user1)
+        link.authorize(user1)
+
+    def test_authorize__user_denied(self):
+        """Check that an authenticated user cannot use the link."""
+        user1 = User(id=1)
+        link = MagicLink(user=user1)
+        with pytest.raises(PermissionDenied):
+            link.authorize(User(id=2))
 
     @freezegun.freeze_time(FREEZE_TIME_NOW)
     @pytest.mark.django_db
@@ -105,6 +105,14 @@ class TestMagicLink:
             link.login(request)
             assert mock_login.called_once_with(request, link.user)
             assert link.logged_in_at == FREEZE_TIME_NOW
+
+    @pytest.mark.django_db
+    def test_disable(self):
+        user = User.objects.create(username="Bob Loblaw")
+        link = MagicLink.objects.create(user=user)
+        assert link.is_active
+        link.disable()
+        assert not link.is_active
 
     @pytest.mark.django_db
     def test_audit(self):
@@ -158,7 +166,7 @@ class TestMagicLink:
             assert log.timestamp != FREEZE_TIME_NOW
 
     @pytest.mark.django_db
-    def test_log_error(self):
+    def test_audit__error(self):
         user = User.objects.create(username="Job Bluth")
         link = MagicLink.objects.create(user=user)
         headers = {"X-Forwarded-For": "127.0.0.1", "User-Agent": "Chrome"}
@@ -166,14 +174,6 @@ class TestMagicLink:
         request = mock.Mock(
             spec=HttpRequest, method="GET", user=user, headers=headers, session=session
         )
-        log = link.audit(request, InvalidTokenUse("Test error"))
+        log = link.audit(request, InvalidLink("Test error"))
         assert log.link == link
         assert log.error == "Test error"
-
-    @pytest.mark.django_db
-    def test_disable(self):
-        user = User.objects.create(username="Bob Loblaw")
-        link = MagicLink.objects.create(user=user)
-        assert link.is_active
-        link.disable()
-        assert not link.is_active

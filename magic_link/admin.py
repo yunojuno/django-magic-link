@@ -32,13 +32,12 @@ class MagicLinkUseInline(LoggedInMixin, admin.TabularInline):
 class MagicLinkAdmin(admin.ModelAdmin):
 
     list_display = (
-        "user",
         "token",
+        "user",
         "expires_at",
         "accessed_at",
         "logged_in_at",
-        "is_active",
-        "has_been_used",
+        "valid",
     )
     search_fields = (
         "user__first_name",
@@ -58,6 +57,13 @@ class MagicLinkAdmin(admin.ModelAdmin):
     )
     ordering = ("-created_at",)
     inlines = (MagicLinkUseInline,)
+
+    def valid(self, obj: MagicLink) -> bool:
+        # convenience method to enable pretty bool icons
+        return obj.is_valid
+
+    valid.short_description = "Valid"  # type: ignore
+    valid.boolean = True  # type: ignore
 
 
 admin.site.register(MagicLink, MagicLinkAdmin)

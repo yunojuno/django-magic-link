@@ -32,6 +32,11 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
 ]
 
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "tests.auth.TestAuthBackend",
+]
+
 PROJECT_DIR = path.abspath(path.join(path.dirname(__file__)))
 
 TEMPLATES = [
