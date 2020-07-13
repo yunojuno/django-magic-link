@@ -29,7 +29,7 @@ class MagicLinkView(View):
             link.audit(request, error=ex)
             return render(
                 request,
-                template_name="error.html",
+                template_name="magic_link/error.html",
                 context={"link": link, "error": ex},
                 status=403,
             )
@@ -37,7 +37,7 @@ class MagicLinkView(View):
             link.audit(request)
             return render(
                 request,
-                template_name="logmein.html",
+                template_name="magic_link/logmein.html",
                 context={"link": link},
                 status=200,
             )
@@ -64,7 +64,7 @@ class MagicLinkView(View):
             link.audit(request, error=ex)
             return render(
                 request,
-                template_name="error.html",
+                template_name="magic_link/error.html",
                 context={"link": link, "error": ex},
                 status=403,
             )
