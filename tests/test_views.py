@@ -1,10 +1,12 @@
 from unittest import mock
 
 import pytest
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.test import Client
 
 from magic_link.models import MagicLink
+
+User = get_user_model()
 
 
 # we are mocking out the audit method in all these tests as it's orthogonal
@@ -22,7 +24,6 @@ class TestMagicLinkViewGet:
         client = Client()
         user = User.objects.create(username="Bob Loblaw")
         link = MagicLink.objects.create(user=user, is_active=False)
-        # assert not link.is_valid
         response = client.get(link.get_absolute_url())
         assert response.status_code == 403
         assert mock_audit.call_count == 1
@@ -32,7 +33,6 @@ class TestMagicLinkViewGet:
         user = User.objects.create(username="Bob Loblaw")
         user2 = User.objects.create(username="Job")
         link = MagicLink.objects.create(user=user)
-        # assert link.is_valid
         client.force_login(user2)
         response = client.get(link.get_absolute_url())
         assert response.status_code == 403

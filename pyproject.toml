@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "django-magic-link"
-version = "0.3.1"
+version = "0.4"
 description = "Django app for managing tokenised 'magic link' logins."
 license = "MIT"
 authors = ["YunoJuno <code@yunojuno.com>"]

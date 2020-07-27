@@ -7,7 +7,7 @@ from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.views import View
 
-from magic_link.models import InvalidLink, MagicLink
+from .models import InvalidLink, MagicLink
 
 logger = logging.getLogger(__name__)
 

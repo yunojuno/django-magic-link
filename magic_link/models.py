@@ -13,7 +13,12 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .exceptions import ExpiredLink, InactiveLink, InvalidLink, UsedLink
-from .settings import AUTHENTICATION_BACKEND, DEFAULT_EXPIRY, DEFAULT_REDIRECT
+from .settings import (
+    AUTHENTICATION_BACKEND,
+    DEFAULT_EXPIRY,
+    DEFAULT_REDIRECT,
+    SESSION_EXPIRY,
+)
 
 
 def parse_remote_addr(request: HttpRequest) -> str:
@@ -124,6 +129,7 @@ class MagicLink(models.Model):
     def login(self, request: HttpRequest) -> None:
         """Call login as the link.user."""
         login(request, self.user, backend=AUTHENTICATION_BACKEND)
+        request.session.set_expiry(SESSION_EXPIRY)
         self.logged_in_at = timezone.now()
         self.save()
 
