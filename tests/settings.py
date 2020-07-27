@@ -107,5 +107,14 @@ COVERAGE_MODULE_EXCLUDES = [
 # COVERAGE_REPORT_HTML_OUTPUT_DIR = 'coverage/html'
 # COVERAGE_USE_STDOUT = True
 
-# AUTH_USER_MODEL = 'tests.CustomUser'
+AUTH_USER_MODEL = "tests.TestUser"
+
+# override default value - so we can check they come through in tests
+MAGIC_LINK = {
+    "DEFAULT_EXPIRY": 600,
+    "DEFAULT_REDIRECT": "/foo",
+    "AUTHENTICATION_BACKEND": "django.contrib.auth.backends.ModelBackend",
+    "SESSION_EXPIRY": 600,
+}
+
 assert DEBUG, "This settings file can only be used with DEBUG=True"  # noqa: S101

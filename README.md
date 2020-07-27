@@ -170,15 +170,24 @@ def post(request, token):
 
 ## Settings
 
-Settings are read from the environment first, then Django settings.
+Settings are read from a `django.conf.settings` settings dictionary called `MAGIC_LINK`.
 
--   `MAGIC_LINK_DEFAULT_EXPIRY`: the default link expiry, in seconds (defaults to 60 - 1 minute).
+Default settings show below:
 
--   `MAGIC_LINK_DEFAULT_REDIRECT`: the default redirect URL (defaults to "/").
-
--   `MAGIC_LINK_AUTHORIZATION_BACKEND`: the preferred authorization backend to use, in the case
-    where you have more than one specified in the `settings.AUTHORIZATION_BACKENDS` setting.
-    Defaults to `django.contrib.auth.backends.ModelBackend`.
+```python
+# settings.py
+MAGIC_LINK = {
+    # link expiry, in seconds
+    "DEFAULT_EXPIRY": 300,
+    # default link redirect
+    "DEFAULT_REDIRECT": "/",
+    # the preferred authorization backend to use, in the case where you have more
+    # than one specified in the `settings.AUTHORIZATION_BACKENDS` setting.
+    "AUTHENTICATION_BACKEND": "django.contrib.auth.backends.ModelBackend",
+    # SESSION_COOKIE_AGE override for magic-link logins - in seconds (default is 1 week)
+    "SESSION_EXPIRY": 7 * 24 * 60 * 60
+}
+```
 
 ## Screenshots
 

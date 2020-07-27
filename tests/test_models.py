@@ -3,7 +3,8 @@ from unittest import mock
 
 import freezegun
 import pytest
-from django.contrib.auth.models import AnonymousUser, User
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.sessions.backends.base import SessionBase
 from django.core.exceptions import PermissionDenied
 from django.http.request import HttpRequest
@@ -16,6 +17,9 @@ from magic_link.models import (
     parse_remote_addr,
     parse_ua_string,
 )
+from magic_link.settings import AUTHENTICATION_BACKEND, SESSION_EXPIRY
+
+User = get_user_model()
 
 # standard "now" time used for freezegun
 FREEZE_TIME_NOW = timezone.now()
@@ -100,10 +104,14 @@ class TestMagicLink:
         user = User.objects.create_user(username="Fernando")
         link = MagicLink(user=user)
         assert not link.logged_in_at
-        request = mock.Mock(spec=HttpRequest, user=link.user)
+        session = mock.Mock(spec=SessionBase)
+        request = mock.Mock(spec=HttpRequest, user=link.user, session=session)
         with mock.patch("magic_link.models.login") as mock_login:
             link.login(request)
-            assert mock_login.called_once_with(request, link.user)
+            mock_login.assert_called_once_with(
+                request, link.user, backend=AUTHENTICATION_BACKEND
+            )
+            session.set_expiry.assert_called_once_with(SESSION_EXPIRY)
             assert link.logged_in_at == FREEZE_TIME_NOW
 
     @pytest.mark.django_db
@@ -144,7 +152,7 @@ class TestMagicLink:
             session=mock.Mock(spec=SessionBase, session_key=""),
         )
         assert timezone.now() != FREEZE_TIME_NOW
-        log = link.audit(request)
+        _ = link.audit(request)
         assert link.accessed_at == FREEZE_TIME_NOW
 
     @pytest.mark.django_db
