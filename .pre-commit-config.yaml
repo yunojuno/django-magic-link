@@ -13,14 +13,6 @@ repos:
           - id: black
             language_version: python3
 
-    # PEP8 linting, with added Django goodness, and custom YJ plugin
-    - repo: https://github.com/pre-commit/mirrors-pylint
-      rev: v2.5.3
-      hooks:
-          - id: pylint
-            args:
-                - --rcfile=.pylintrc
-
     # Flake8 includes pyflakes, pycodestyle, mccabe, pydocstyle, bandit
     - repo: https://gitlab.com/pycqa/flake8
       rev: 3.8.3
@@ -38,11 +30,3 @@ repos:
                 - --ignore-missing-imports
                 # means we only get error on the current file
                 - --follow-imports=silent
-
-    # JS, JSON and SCSS formatting
-    - repo: https://github.com/prettier/prettier
-      rev: 2.0.5
-      hooks:
-          - id: prettier
-            args:
-                - --config=.prettierrc
