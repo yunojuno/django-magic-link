@@ -44,11 +44,34 @@ this situation.
 
 ## Use
 
+### Prerequisite: Update settings.py and urls.py
+
+Add `magic_link` to INSTALLED_APPS in settings.py:
+
+```python
+INSTALLED_APPS = [
+    ...
+    'magic_link',
+]
+```
+
+Add the `magic_link` urls to urls.py:
+
+```python
+from magic_link import urls as magic_link_urls
+
+
+urlpatterns = [
+    ...
+    url(r'^magic_link/', include(magic_link_urls)),
+]
+```
+
 ### Prerequisite: Override the default templates.
 
 This package has two HTML templates that must be overridden in your local application.
 
-**logmein.html**
+**templates/magic_link/logmein.html**
 
 This is the landing page that a user sees when they click on the magic link. You can add any content
 you like to this page - the only requirement is that must contains a simple form with a csrf token
@@ -56,13 +79,13 @@ and a submit button. This form must POST back to the link URL. The template rend
 the `link` which has a `get_absolute_url` method to simplify this:
 
 ```html
-<form method="POST" action="{{ link.get_absolute_url }}>
+<form method="POST" action="{{ link.get_absolute_url }}">
     {% csrf_token %}
     <button type="submit">Log me in</button>
 </form>
 ```
 
-**error.html**
+**templates/magic_link/error.html**
 
 If the link has expired, been used, or is being accessed by someone who is already logged in, then
 the `error.html` template will be rendered. The template context includes `link` and `error`.
@@ -74,7 +97,7 @@ the `error.html` template will be rendered. The template context includes `link`
 ### 1. Create a new login link
 
 The first step in managing magic links is to create one. Links are bound to a user, and can have a
-custom expiry and post-login redirect URL.
+custom post-login redirect URL.
 
 ```python
 # create a link with the default expiry and redirect
@@ -83,11 +106,11 @@ link = MagicLink.objects.create(user=user)
 # create a link with a specific redirect
 link = MagicLink.objects.create(user=user, redirect_to="/foo")
 
-# create a link with a specific expiry (in seconds)
-link = MagicLink.objects.create(user=user, expiry=60)
+# construct a full URL from a MagicLink object and a Django HttpResponse
+url = request.build_absolute_uri(link.get_absolute_url())
 ```
 
-### 3. Send the link to the user
+### 2. Send the link to the user
 
 This package does not handle the sending on your behalf - it is your responsibility to ensure that
 you send the link to the correct user. If you send the link to the wrong user, they will have full
