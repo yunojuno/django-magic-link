@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import uuid
-from typing import Optional
 
 from django.conf import settings
 from django.contrib.auth import login
@@ -80,7 +79,7 @@ class MagicLink(models.Model):
         return reverse("magic_link", kwargs={"token": self.token})
 
     @property
-    def has_expired(self) -> Optional[bool]:
+    def has_expired(self) -> bool | None:
         """Return True if the link is past its expiry timestamp."""
         if self.expires_at:
             return self.expires_at < timezone.now()
@@ -141,8 +140,8 @@ class MagicLink(models.Model):
     def audit(
         self,
         request: HttpRequest,
-        error: InvalidLink = None,
-        timestamp: datetime.datetime = None,
+        error: InvalidLink | None = None,
+        timestamp: datetime.datetime | None = None,
     ) -> MagicLinkUse:
         """
         Create a MagicLinkUse from an HtttpRequest.
@@ -184,7 +183,9 @@ class MagicLinkUse(models.Model):
     timestamp = models.DateTimeField(
         help_text="When the token page was requested", default=timezone.now
     )
-    http_method = models.CharField(max_length=10,)
+    http_method = models.CharField(
+        max_length=10,
+    )
     session_key = models.CharField(
         max_length=40, help_text="The request session identifier", blank=True
     )

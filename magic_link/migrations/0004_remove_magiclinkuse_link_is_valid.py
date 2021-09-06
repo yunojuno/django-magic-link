@@ -10,5 +10,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(model_name="magiclinkuse", name="link_is_valid",),
+        migrations.RemoveField(
+            model_name="magiclinkuse",
+            name="link_is_valid",
+        ),
     ]
