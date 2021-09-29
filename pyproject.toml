@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "django-magic-link"
-version = "0.5"
+version = "0.5.1"
 description = "Django app for managing tokenised 'magic link' logins."
 license = "MIT"
 authors = ["YunoJuno <code@yunojuno.com>"]
@@ -28,7 +28,7 @@ packages = [{ include = "magic_link" }]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-django = "^2.2 || ^3.0"
+django = "^2.2 || ^3.0 || ^4.0"
 
 [tool.poetry.dev-dependencies]
 black = {version = "*", allows-prereleases = true}
