@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## v0.6.0
+## v1.0.0
 
 * Remove support for Python 3.7
 * Add support for Python 3.10, 3.11
