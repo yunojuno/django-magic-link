@@ -30,7 +30,6 @@ class MagicLinkUseInline(LoggedInMixin, admin.TabularInline):
 
 
 class MagicLinkAdmin(admin.ModelAdmin):
-
     list_display = (
         "token",
         "user",
@@ -70,7 +69,6 @@ admin.site.register(MagicLink, MagicLinkAdmin)
 
 
 class MagicLinkUseAdmin(LoggedInMixin, admin.ModelAdmin):
-
     list_display = ("link", "http_method", "session_key", "logged_in")
     search_fields = (
         "session_key",

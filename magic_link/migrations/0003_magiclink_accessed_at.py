@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("magic_link", "0002_magiclink_logged_in_at"),
     ]
