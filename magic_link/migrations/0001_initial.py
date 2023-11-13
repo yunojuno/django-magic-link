@@ -7,6 +7,7 @@ from django.conf import settings
 from django.db import migrations, models
 
 import magic_link.models
+import magic_link.settings
 
 
 class Migration(migrations.Migration):
@@ -41,7 +42,7 @@ class Migration(migrations.Migration):
                 (
                     "redirect_to",
                     models.CharField(
-                        default="/",
+                        default=magic_link.settings.DEFAULT_REDIRECT,
                         help_text="URL to which user will be redirected after logging in. ('/')",
                         max_length=255,
                     ),

@@ -7,6 +7,8 @@ USE_L10N = True
 
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": "test.db"}}
 
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
 INSTALLED_APPS = (
     "django.contrib.admin",
     "django.contrib.auth",
