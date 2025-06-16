@@ -2,6 +2,8 @@
 
 Opinionated Django app for managing "magic link" logins.
 
+**Version 1.1.0 now supports Django 4.2, 5.0, and 5.2.**
+
 **WARNING**
 
 If you send a login link to the wrong person, they will gain full access
