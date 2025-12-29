@@ -2,7 +2,7 @@
 
 Opinionated Django app for managing "magic link" logins.
 
-**Version 1.1.0 now supports Django 4.2, 5.0, and 5.2.**
+**Version 1.2.0 now supports Python 3.12+ and Django 5.2-6.0.**
 
 **WARNING**
 
