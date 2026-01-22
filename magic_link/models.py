@@ -44,8 +44,8 @@ class MagicLink(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="magic_links"
     )
-    token = models.UUIDField(
-        default=uuid.uuid4, editable=False, unique=True, help_text="Unique login token"
+    token = models.CharField(
+        default=uuid.uuid4, editable=False, unique=True, help_text="Unique login token", max_length=36
     )
     redirect_to = models.CharField(
         help_text="URL to which user will be redirected after logging in. ('/')",
